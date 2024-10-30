@@ -4,6 +4,13 @@ const bot = new TelegramBot(process.env.API_KEY_BOT, {
     polling: true
 });
 
-bot.on("message", (msg) => {
-  console.log(msg);
+bot.setMyCommands([{ command: "/start", description: "Запуск бота" }]);
+
+bot.on("message", async (msg) => {
+  const text = msg.text;
+  const chatid = msg.chat.id;
+
+  if (text === "/start") {
+    await bot.sendMessage(chatid, "Приветствую!");
+  }
 });
