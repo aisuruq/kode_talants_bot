@@ -16,7 +16,7 @@ const texts = {
     askName: "Введите вашу фамилию и имя",
     askAge: "Введите ваш возраст",
     askCity: "Введите ваш город",
-    askResume: "Отправьте ваше резюме",
+    askResume: "Отправьте ваше резюме в виде ссылки или файла",
     askExperience: "Опишите ваш коммерческий опыт",
     thanks: "Спасибо за заполнение информации!"
   },
@@ -37,7 +37,7 @@ const texts = {
     askName: "Enter your first and last name",
     askAge: "Enter your age",
     askCity: "Enter your city",
-    askResume: "Send your resume",
+    askResume: "Send your resume by link or file",
     askExperience: "Describe your commercial experience",
     thanks: "Thanks for filling out the information!"
   }
