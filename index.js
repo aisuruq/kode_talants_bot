@@ -123,6 +123,7 @@ bot.on("message", async (msg) => {
       userData.city = msg.text;
       await bot.sendMessage(chatId, texts[userLang].askResume);
     } else if (!userData.resume) {
+      // если файл
       if (msg.document) {
         const fileId = msg.document.file_id;
         const fileName = msg.document.file_name;
@@ -131,6 +132,7 @@ bot.on("message", async (msg) => {
         console.log(fileName + "  " + fileLink);
         userData.resume = fileLink;
       }
+      // если ссылка
       else {
         userData.resume = msg.text;
       }
