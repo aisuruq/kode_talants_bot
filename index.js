@@ -16,19 +16,19 @@ const langOptions = {
   }),
 };
 
-bot.on("message", async (msg) => {
-  const text = msg.text;
-  const chatid = msg.chat.id;
+bot.onText(/\/start/, (msg) => {
+  bot.sendMessage(msg.chat.id, 'Выберите язык / Choose a language:', langOptions);
+});
 
-  if (text === "/start") {
-    await bot.sendMessage(
-      chatid,
-      "Приветствую! Для начала выбери язык \n\n Hello! Choose a language",
-      langOptions
-    );
+bot.on('callback_query', (query) => {
+  const chatId = query.message.chat.id;
+
+  bot.answerCallbackQuery(query.id);
+
+  if (query.data === 'rus') {
+    bot.sendMessage(chatId, 'Вы выбрали русский язык. Приветсвую вас в KODE talants!');
+  } else if (query.data === 'eng') {
+    bot.sendMessage(chatId, 'You have selected English. Welcome to KODE talents!!');
   }
 });
 
-bot.on("callback_query", (msg) => {
-  console.log(msg);
-});
