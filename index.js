@@ -147,16 +147,6 @@ bot.on("message", async (msg) => {
   }
 });
 
-bot.on('document', async (msg) => {
-  const chatId = msg.chat.id;
-  const fileId = msg.document.file_id;
-  const fileName = msg.document.file_name;
-
-  const fileLink = await bot.getFileLink(fileId);
-
-  console.log(fileName + "  " + fileLink);
-})
-
 const saveToGoogleSheets = (userData) => {
   console.log("Сохранение данных в Google Sheets:", userData);
 };
