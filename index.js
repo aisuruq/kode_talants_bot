@@ -5,6 +5,7 @@ const bot = new tgApi(process.env.API_KEY_BOT, {
   polling: true,
 });
 
+bot.setMyCommands([{ command: "/start", description: "Запуск бота" }]);
 bot.setMyCommands(
   [
     { command: "/start", description: "Запуск бота" },
@@ -24,7 +25,11 @@ const langOptions = {
 let selectedLanguage = "rus";
 
 bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, 'Выберите язык / Choose a language:', langOptions);
+  bot.sendMessage(
+    msg.chat.id,
+    "Выберите язык / Choose a language:",
+    langOptions
+  );
 });
 
 let helpMessageRus = `
@@ -39,8 +44,9 @@ Here are the available commands:
   /help - Show this help message.
 Please provide your consent for data processing to continue.`;
 
-bot.on('callback_query', (query) => {
+bot.on("callback_query", (query) => {
   const chatId = query.message.chat.id;
+  const messageId = query.message.message_id;
   const lang = query.data;
   const MessageId = query.message.message_id;
 
@@ -50,10 +56,16 @@ bot.on('callback_query', (query) => {
   selectedLanguage = lang;
 
   if (lang === "rus") {
+    bot.deleteMessage(chatId, messageId);
+    const ruScenario = require("./scenarios/rus");
+    ruScenario(bot, chatId);
     const ruScenario = require("./scenarios/rus");
     ruScenario(bot,chatId);
 
   } else if (lang === "eng") {
+    bot.deleteMessage(chatId, messageId);
+    const enScenario = require("./scenarios/eng");
+    enScenario(bot, chatId);
     const enScenario = require("./scenarios/eng");
     enScenario(bot,chatId);
   }
