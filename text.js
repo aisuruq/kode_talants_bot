@@ -9,9 +9,9 @@ const texts = {
     consentDisagree: "Вы не дали согласие. Мы не сможем продолжить без согласия.",
     help: `
       Вот доступные команды:
-      /start - Запуск взаимодействия с ботом.
-      /help - Показать это сообщение помощи.
-      Пожалуйста, дайте согласие на обработку данных для продолжения.
+      /start - Запуск для взаимодействия с ботом.
+      /help - Показать вспомогательные команды.
+      Согласие на обработку персональных данных обязательный пунк для взаимодействия с ботом.
     `,
     askName: "Введите вашу фамилию и имя",
     askAge: "Введите ваш возраст",
@@ -31,8 +31,8 @@ const texts = {
     help: `
       Here are the available commands:
       /start - Start the interaction with the bot.
-      /help - Show this help message.
-      Please provide your consent for data processing to continue.
+      /help - Show these аuxiliary commands.
+      Consent to the processing of personal data is a mandatory item for interaction with the bot.
     `,
     askName: "Enter your first and last name",
     askAge: "Enter your age",

@@ -8,8 +8,8 @@ const bot = new telegramBot(process.env.API_KEY_BOT, {
 
 bot.setMyCommands(
   [
-    { command: "/start", description: "Запуск бота" },
-    { command: "/help", description: "Помощь" }
+    { command: "/start", description: "Запуск бота / Start Bot" },
+    { command: "/help", description: "Вспомогательные команды / Auxiliary commands" }
   ]
 );
 
@@ -31,6 +31,31 @@ bot.onText(/\/start/, (msg) => {
     "Выберите язык / Choose a language:",
     langOptions
   );
+});
+
+bot.on("message", (msg) => {
+  const chatId = msg.chat.id;
+
+  if (msg.text === "Старт") {
+    bot.sendMessage(chatId, "Выберите язык / Choose a language:", langOptions);
+  }
+});
+
+bot.onText(/\/help/, async (msg) => {
+  const chatId = msg.chat.id;
+  
+  if (selectedLanguage) {
+    await bot.sendMessage(chatId, texts[selectedLanguage].help);
+  } else {
+    const startOptions = {
+    reply_markup: {
+        keyboard: [[{ text: "Старт / Start" }]], 
+        resize_keyboard: true,
+        one_time_keyboard: true, 
+      },
+    };
+    await bot.sendMessage(chatId, "Для начала запустите бота / First, launch the bot", startOptions);
+  }
 });
 
 bot.on("callback_query", async (query) => {
@@ -58,9 +83,10 @@ bot.on("callback_query", async (query) => {
   }
 
   else if (data === `${selectedLanguage}_consent_agree`) {
+    userResponses[chatId].consent = true;
     await bot.sendMessage(chatId, texts[selectedLanguage].consentAgree);
     bot.deleteMessage(chatId, query.message.message_id);
-    startRegistration(chatId, selectedLanguage);
+    startRegistration(chatId);
 
   } else if (data === `${selectedLanguage}_consent_disagree`) {
     bot.answerCallbackQuery(query.id);
@@ -100,18 +126,20 @@ const requestConsent = (chatId, language) => {
 };
 
 const startRegistration = async (chatId) => {
-  const userLang = userResponses[chatId].language;
-  userResponses[chatId] = { language: userLang };
-  await bot.sendMessage(chatId, texts[userLang].askName);
+  const userData = userResponses[chatId];
+  if (userData && userData.consent) {
+    const userLang = userData.language;
+    await bot.sendMessage(chatId, texts[userLang].askName);
+  } else {
+    await bot.sendMessage(chatId, "Пожалуйста, подтвердите согласие на обработку данных.");
+  }
 };
 
 bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const userData = userResponses[chatId];
 
-
-
-  if (userData && userData.language) {
+  if (userData && userData.language && userData.consent) {
     const userLang = userData.language;
     if (!userData.name) {
       userData.name = msg.text;
@@ -148,7 +176,6 @@ bot.on("message", async (msg) => {
 });
 
 bot.on('document', async (msg) => {
-  const chatId = msg.chat.id;
   const fileId = msg.document.file_id;
   const fileName = msg.document.file_name;
 
