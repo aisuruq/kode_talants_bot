@@ -5,7 +5,10 @@ const bot = new tgApi(process.env.API_KEY_BOT, {
   polling: true,
 });
 
-bot.setMyCommands([{ command: "/start", description: "Запуск бота" }]);
+bot.setMyCommands(
+  [{ command: "/start", description: "Запуск бота" }]
+  
+);
 
 const langOptions = {
   reply_markup: JSON.stringify({
@@ -22,13 +25,15 @@ bot.onText(/\/start/, (msg) => {
 
 bot.on('callback_query', (query) => {
   const chatId = query.message.chat.id;
+  const lang = query.data;
 
   bot.answerCallbackQuery(query.id);
 
-  if (query.data === 'rus') {
-    bot.sendMessage(chatId, 'Вы выбрали русский язык. Приветсвую вас в KODE talants!');
-  } else if (query.data === 'eng') {
-    bot.sendMessage(chatId, 'You have selected English. Welcome to KODE talents!!');
+  if (lang === "rus") {
+    const ruScenario = require("./scenarios/ru");
+    ruScenario(bot,chatId);
+  } else if (lang === "eng") {
+    const enScenario = require("./scenarios/en");
+    enScenario(bot,chatId);
   }
 });
-
