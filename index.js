@@ -5,10 +5,7 @@ const bot = new tgApi(process.env.API_KEY_BOT, {
   polling: true,
 });
 
-bot.setMyCommands(
-  [{ command: "/start", description: "Запуск бота" }]
-  
-);
+bot.setMyCommands([{ command: "/start", description: "Запуск бота" }]);
 
 const langOptions = {
   reply_markup: JSON.stringify({
@@ -20,20 +17,27 @@ const langOptions = {
 };
 
 bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, 'Выберите язык / Choose a language:', langOptions);
+  bot.sendMessage(
+    msg.chat.id,
+    "Выберите язык / Choose a language:",
+    langOptions
+  );
 });
 
-bot.on('callback_query', (query) => {
+bot.on("callback_query", (query) => {
   const chatId = query.message.chat.id;
+  const messageId = query.message.message_id;
   const lang = query.data;
 
   bot.answerCallbackQuery(query.id);
 
   if (lang === "rus") {
-    const ruScenario = require("./scenarios/ru");
-    ruScenario(bot,chatId);
+    bot.deleteMessage(chatId, messageId);
+    const ruScenario = require("./scenarios/rus");
+    ruScenario(bot, chatId);
   } else if (lang === "eng") {
-    const enScenario = require("./scenarios/en");
-    enScenario(bot,chatId);
+    bot.deleteMessage(chatId, messageId);
+    const enScenario = require("./scenarios/eng");
+    enScenario(bot, chatId);
   }
 });
