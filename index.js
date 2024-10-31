@@ -1,5 +1,5 @@
 require("dotenv").config();
-const texts = require('./text');
+const texts = require("./text");
 const telegramBot = require(`node-telegram-bot-api`);
 
 const bot = new telegramBot(process.env.API_KEY_BOT, {
@@ -37,7 +37,7 @@ bot.onText(/\/start/, (msg) => {
 bot.on("message", (msg) => {
   const chatId = msg.chat.id;
 
-  if (msg.text === "Старт") {
+  if (msg.text === "Старт / Start") {
     bot.sendMessage(chatId, "Выберите язык / Choose a language:", langOptions);
   }
 });
@@ -49,18 +49,22 @@ bot.onText(/\/link/, async (msg) => {
 
 bot.onText(/\/help/, async (msg) => {
   const chatId = msg.chat.id;
-  
+
   if (selectedLanguage) {
     await bot.sendMessage(chatId, texts[selectedLanguage].help);
   } else {
     const startOptions = {
-    reply_markup: {
-        keyboard: [[{ text: "Старт / Start" }]], 
+      reply_markup: {
+        keyboard: [[{ text: "Старт / Start" }]],
         resize_keyboard: true,
-        one_time_keyboard: true, 
+        one_time_keyboard: true,
       },
     };
-    await bot.sendMessage(chatId, "Для начала запустите бота / First, launch the bot", startOptions);
+    await bot.sendMessage(
+      chatId,
+      "Для начала запустите бота / First, launch the bot",
+      startOptions
+    );
   }
 });
 
@@ -73,30 +77,31 @@ bot.on("callback_query", async (query) => {
   if (data === "rus" || data === "eng") {
     selectedLanguage = data;
     userResponses[chatId] = { language: selectedLanguage };
-
     await bot.deleteMessage(chatId, query.message.message_id);
     await bot.sendMessage(chatId, texts[selectedLanguage].welcome);
     askSpeciality(chatId, selectedLanguage);
-
   } else if (data === `${selectedLanguage}_spec_yes`) {
     await bot.sendMessage(chatId, texts[selectedLanguage].specYesResponse);
+    userResponses[chatId];
+    userResponses[chatId].isSpecKnown = true;
     bot.deleteMessage(chatId, query.message.message_id);
     requestConsent(chatId, selectedLanguage);
   } else if (data === `${selectedLanguage}_spec_no`) {
     await bot.sendMessage(chatId, texts[selectedLanguage].specNoResponse);
+    userResponses[chatId].isSpecKnown = false;
     bot.deleteMessage(chatId, query.message.message_id);
     requestConsent(chatId, selectedLanguage);
-  }
-
-  else if (data === `${selectedLanguage}_consent_agree`) {
+  } else if (data === `${selectedLanguage}_consent_agree`) {
     userResponses[chatId].consent = true;
     await bot.sendMessage(chatId, texts[selectedLanguage].consentAgree);
     bot.deleteMessage(chatId, query.message.message_id);
     startRegistration(chatId);
-
   } else if (data === `${selectedLanguage}_consent_disagree`) {
     bot.answerCallbackQuery(query.id);
-    const consentMessage = await bot.sendMessage(chatId, texts[selectedLanguage].consentDisagree);
+    const consentMessage = await bot.sendMessage(
+      chatId,
+      texts[selectedLanguage].consentDisagree
+    );
     setTimeout(async () => {
       await bot.deleteMessage(chatId, consentMessage.message_id);
       requestConsent(chatId, selectedLanguage);
@@ -110,8 +115,18 @@ const askSpeciality = (chatId, language) => {
   const specOptions = {
     reply_markup: JSON.stringify({
       inline_keyboard: [
-        [{ text: language === "rus" ? "Да" : "Yes", callback_data: `${language}_spec_yes` }],
-        [{ text: language === "rus" ? "Нет" : "No", callback_data: `${language}_spec_no` }],
+        [
+          {
+            text: language === "rus" ? "Да" : "Yes",
+            callback_data: `${language}_spec_yes`,
+          },
+        ],
+        [
+          {
+            text: language === "rus" ? "Нет" : "No",
+            callback_data: `${language}_spec_no`,
+          },
+        ],
       ],
     }),
   };
@@ -119,85 +134,167 @@ const askSpeciality = (chatId, language) => {
   bot.sendMessage(chatId, texts[language].specialityQuestion, specOptions);
 };
 
-const requestConsent = (chatId, language) => {
-  const consentOptions = {
-    reply_markup: JSON.stringify({
-      inline_keyboard: [
-        [{ text: language === "rus" ? "Согласен" : "Agree", callback_data: `${language}_consent_agree` }],
-        [{ text: language === "rus" ? "Не согласен" : "Disagree", callback_data: `${language}_consent_disagree` }],
-      ],
-    }),
-  };
-  bot.sendMessage(chatId, texts[language].consentRequest, consentOptions);
+const requestConsent = async (chatId, language) => {
+  const filePath = "./consept_agree.pdf"; 
+
+  try {
+    const consentOptions = {
+      caption: texts[language].consentRequest, 
+      reply_markup: JSON.stringify({
+        inline_keyboard: [
+          [
+            {
+              text: language === "rus" ? "Согласен" : "Agree",
+              callback_data: `${language}_consent_agree`,
+            },
+          ],
+          [
+            {
+              text: language === "rus" ? "Не согласен" : "Disagree",
+              callback_data: `${language}_consent_disagree`,
+            },
+          ],
+        ],
+      }),
+    };
+    
+    await bot.sendDocument(chatId, filePath, consentOptions);
+  } catch (error) {
+    console.error("Ошибка отправки файла согласия:", error);
+  }
 };
+
+let regProcess;
 
 const startRegistration = async (chatId) => {
   const userData = userResponses[chatId];
-  if (userData && userData.consent) {
-    const userLang = userData.language;
-    await bot.sendMessage(chatId, texts[userLang].askName);
+  if (userData.consent) {
+    await askRegistrationStep(chatId, userData, "askName");
+    regProcess = true;
   } else {
     await bot.sendMessage(chatId, "Пожалуйста, подтвердите согласие на обработку данных.");
   }
 };
 
-bot.on("message", async (msg) => {
-  const chatId = msg.chat.id;
-  const userData = userResponses[chatId];
+const askRegistrationStep = async (chatId, userData, step) => {
+  const steps = {
+    askName: () => bot.sendMessage(chatId, texts[userData.language].askName),
+    askAge: () => bot.sendMessage(chatId, texts[userData.language].askAge),
+    askCity: () => bot.sendMessage(chatId, texts[userData.language].askCity),
+    askResume: () => bot.sendMessage(chatId, texts[userData.language].askResume),
+  };
 
-  if (msg.text.startsWith("/")) return;
-
-  if (userData && userData.language && userData.consent) {
-    const userLang = userData.language;
-
-    if (!userData.name) {
-      userData.name = msg.text;
-      await bot.sendMessage(chatId, texts[userLang].askAge);
-    } else if (!userData.age) {
-      userData.age = msg.text;
-      await bot.sendMessage(chatId, texts[userLang].askCity);
-    } else if (!userData.city) {
-      userData.city = msg.text;
-      await bot.sendMessage(chatId, texts[userLang].askResume);
-    } else if (!userData.resume) {
-      if (msg.document) {
-        const fileId = msg.document.file_id;
-        const fileName = msg.document.file_name;
-
-        const fileLink = await bot.getFileLink(fileId);
-        console.log(fileName + "  " + fileLink);
-        userData.resume = fileLink;
-      } else {
-        userData.resume = msg.text;
-      }
-
-      await bot.sendMessage(chatId, texts[userLang].askExperience);
-
-    } else if (!userData.experience) {
-      userData.experience = msg.text;
-      userData.registrationComplete = true;
-      await bot.sendMessage(chatId, texts[userLang].thanks);
-      await sendTestAssignment(chatId, userLang);
-    }
+  if (steps[step]) {
+    steps[step]();
+    userData.currentStep = step;
   }
-});
-
-const sendTestAssignment = async (chatId, language) => {
-  await bot.sendMessage(chatId, texts[language].testTask);
-  userResponses[chatId].waitingForTestResponse = true;
 };
 
 bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const userData = userResponses[chatId];
 
-  if (userData && userResponses.specThread === true) {
-    const userLang = userData.language;
+  if (userData && userData.consent) {
+    if (userData.currentStep === "askName") {
+      userData.name = msg.text;
+      await askRegistrationStep(chatId, userData, "askAge");
+    } else if (userData.currentStep === "askAge") {
+      const age = parseInt(msg.text, 10); 
+      if (isNaN(age) || age <= 0) {
+        await bot.sendMessage(chatId, texts[userData.language].invalidAgeMessage); 
+      } else {
+        userData.age = age; 
+        await askRegistrationStep(chatId, userData, "askCity"); 
+      }
+    } else if (userData.currentStep === "askCity") {
+      userData.city = msg.text;
+      await askRegistrationStep(chatId, userData, "askResume");
+    } else if (userData.currentStep === "askResume") {
+      userData.resume = msg.document ? await bot.getFileLink(msg.document.file_id) : msg.text;
+      if (userData.isSpecKnown) {
+        await askExperience(chatId, userData.language);
+      } else {
+        await bot.sendMessage(chatId, texts[userData.language].thanks);
+        saveToGoogleSheets(userData);
+        delete userResponses[chatId];
+      }
+    }
+  }
+});
 
-    userData.testResponse = msg.document ? await bot.getFileLink(msg.document.file_id) : msg.text;
-    await bot.sendMessage(chatId, texts[userLang].testThanks);
+let experienceMessageId;
 
-    saveToGoogleSheets(userData);
+const askExperience = (chatId, language) => {
+  const expOptions = {
+    reply_markup: JSON.stringify({
+      inline_keyboard: [
+        [{ text: language === "rus" ? "менее 1.5 лет" : "less than 1.5 years", callback_data: `${language}_exp_below` }],
+        [{ text: language === "rus" ? "1.5 - 3 лет" : "1.5 - 3 years", callback_data: `${language}_exp_between` }],
+        [{ text: language === "rus" ? "более 3 лет" : "more than 3 years", callback_data: `${language}_exp_above` }],
+      ],
+    }),
+  };
+  lastMessageId2 = bot.sendMessage(chatId, texts[language].askExperience, expOptions).then((sentMessage) => {
+    experienceMessageId = sentMessage.message_id;
+  });
+}
+
+bot.on("callback_query", (query) => {
+  const chatId = query.message.chat.id;
+  const data = query.data;
+  const userData = userResponses[chatId];
+  userData.experience = data; 
+  if (data.endsWith("_exp_below") || data.endsWith("_exp_between") || data.endsWith("_exp_above")) {
+    sendTestAssignment(chatId, userData.language);
+  }
+});
+
+const sendTestAssignment = async (chatId, language) => {
+  const userData = userResponses[chatId];
+  
+  let testAssignmentLink;
+  if (userData.experience === `${language}_exp_below`) {
+    testAssignmentLink = texts[language].testAssignments.below_1_5_years;
+  } else if (userData.experience === `${language}_exp_between`) {
+    testAssignmentLink = texts[language].testAssignments.between_1_5_and_3_years;
+  } else if (userData.experience === `${language}_exp_above`) {
+    testAssignmentLink = texts[language].testAssignments.above_3_years;
+  }
+
+  if (experienceMessageId) {
+    await bot.deleteMessage(chatId, experienceMessageId);
+  }
+  if (testAssignmentLink) {
+    regProcess = false;
+    await bot.sendMessage(chatId, `${texts[language].testTaskIntro} ${testAssignmentLink}`)
+    await bot.sendMessage(chatId, texts[language].askForSubmission)
+  } else {
+    await bot.sendMessage(chatId, texts[language].thanks);
+  }
+};
+
+bot.on("message", async (msg) => {
+  const chatId = msg.chat.id;
+  const userData = userResponses[chatId];
+  if (userData && regProcess === false) {
+    if (msg.document) {
+      const fileId = msg.document.file_id;
+      const fileLink = await bot.getFileLink(fileId); 
+      userData.submission = fileLink;
+      await bot.sendMessage(chatId, `${texts[userData.language].fileReceived} ${fileLink}`);
+    } else if (msg.text) {
+      userData.submission = msg.text; 
+      await bot.sendMessage(chatId, `${texts[userData.language].textReceived} ${msg.text}`);
+    }
+
+    await bot.sendMessage(chatId, texts[userData.language].thanksForSubmission);
+    setTimeout( async () => {
+      await bot.sendMessage(chatId, texts[userData.language].afterChekTestTask);
+    }, 2000)
+    
+
+    await bot.deleteMessage(chatId, experienceMessageId);
+
     delete userResponses[chatId]; 
   }
 });
