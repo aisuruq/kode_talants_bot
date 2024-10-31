@@ -9,7 +9,8 @@ const bot = new telegramBot(process.env.API_KEY_BOT, {
 bot.setMyCommands(
   [
     { command: "/start", description: "Запуск бота / Start Bot" },
-    { command: "/help", description: "Вспомогательные команды / Auxiliary commands" }
+    { command: "/help", description: "Вспомогательные команды / Auxiliary commands" },
+    { command: "/link", description: "Наш сайт / Our web-page" }
   ]
 );
 
@@ -39,6 +40,11 @@ bot.on("message", (msg) => {
   if (msg.text === "Старт") {
     bot.sendMessage(chatId, "Выберите язык / Choose a language:", langOptions);
   }
+});
+
+bot.onText(/\/link/, async (msg) => {
+  const chatId = msg.chat.id;
+  await bot.sendMessage(chatId, `https://kode.ru`);
 });
 
 bot.onText(/\/help/, async (msg) => {
@@ -139,8 +145,11 @@ bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const userData = userResponses[chatId];
 
+  if (msg.text.startsWith("/")) return;
+
   if (userData && userData.language && userData.consent) {
     const userLang = userData.language;
+
     if (!userData.name) {
       userData.name = msg.text;
       await bot.sendMessage(chatId, texts[userLang].askAge);
@@ -151,7 +160,6 @@ bot.on("message", async (msg) => {
       userData.city = msg.text;
       await bot.sendMessage(chatId, texts[userLang].askResume);
     } else if (!userData.resume) {
-      // если файл
       if (msg.document) {
         const fileId = msg.document.file_id;
         const fileName = msg.document.file_name;
@@ -159,31 +167,37 @@ bot.on("message", async (msg) => {
         const fileLink = await bot.getFileLink(fileId);
         console.log(fileName + "  " + fileLink);
         userData.resume = fileLink;
-      }
-      // если ссылка
-      else {
+      } else {
         userData.resume = msg.text;
       }
+
       await bot.sendMessage(chatId, texts[userLang].askExperience);
+
     } else if (!userData.experience) {
       userData.experience = msg.text;
+      userData.registrationComplete = true;
       await bot.sendMessage(chatId, texts[userLang].thanks);
-
-      saveToGoogleSheets(userData);
-      delete userResponses[chatId];
+      await sendTestAssignment(chatId, userLang);
     }
   }
 });
 
-bot.on('document', async (msg) => {
-  const fileId = msg.document.file_id;
-  const fileName = msg.document.file_name;
-
-  const fileLink = await bot.getFileLink(fileId);
-
-  console.log(fileName + "  " + fileLink);
-})
-
-const saveToGoogleSheets = (userData) => {
-  console.log("Сохранение данных в Google Sheets:", userData);
+const sendTestAssignment = async (chatId, language) => {
+  await bot.sendMessage(chatId, texts[language].testTask);
+  userResponses[chatId].waitingForTestResponse = true;
 };
+
+bot.on("message", async (msg) => {
+  const chatId = msg.chat.id;
+  const userData = userResponses[chatId];
+
+  if (userData && userResponses.specThread === true) {
+    const userLang = userData.language;
+
+    userData.testResponse = msg.document ? await bot.getFileLink(msg.document.file_id) : msg.text;
+    await bot.sendMessage(chatId, texts[userLang].testThanks);
+
+    saveToGoogleSheets(userData);
+    delete userResponses[chatId]; 
+  }
+});
