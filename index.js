@@ -226,8 +226,6 @@ bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const userData = userResponses[chatId];
 
-  if (msg.text.startsWith("/")) return;
-
   if (userData && userData.consent) {
     if (userData.currentStep === "askName") {
       userData.name = msg.text;
@@ -302,7 +300,7 @@ const sendTestAssignment = async (chatId, language) => {
     regProcess = false;
     await bot.sendMessage(chatId, `${texts[language].testTaskIntro} ${testAssignmentLink}`)
     await bot.sendMessage(chatId, texts[language].askForSubmission)
-    
+
   } else {
     await bot.sendMessage(chatId, texts[language].thanks);
   }
