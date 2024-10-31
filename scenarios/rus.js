@@ -15,6 +15,7 @@ module.exports = (bot, chatId) => {
     chatId,
     "Вы выбрали русский язык. Приветствуем вас в KODE talents!"
   );
+
   bot.sendMessage(
     chatId,
     "Вы знаете какая специальность вам интересна?",

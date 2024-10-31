@@ -2,11 +2,15 @@ const texts = {
   rus: {
     welcome: "Вы выбрали русский язык. Приветствуем вас в KODE talents!",
     specialityQuestion: "Вы знаете какая специальность вам интересна?",
-    specYesResponse: "Хорошо, тогда вам нужно пройти регистрацию для дальнейшего определения тестового задания.",
-    specNoResponse: "Хорошо, тогда вам нужно пройти регистрацию для прохождения профориентационного теста.",
-    consentRequest: "Пожалуйста, дайте согласие на обработку персональных данных.",
+    specYesResponse:
+      "Хорошо, тогда вам нужно пройти регистрацию для дальнейшего определения тестового задания.",
+    specNoResponse:
+      "Хорошо, тогда вам нужно пройти регистрацию для прохождения профориентационного теста.",
+    consentRequest:
+      "Пожалуйста, дайте согласие на обработку персональных данных.",
     consentAgree: "Спасибо! Вы дали согласие на обработку персональных данных.",
-    consentDisagree: "Вы не дали согласие. Мы не сможем продолжить без согласия.",
+    consentDisagree:
+      "Вы не дали согласие. Мы не сможем продолжить без согласия.",
     help: `
       Вот доступные команды:
       /start - Запуск для взаимодействия с ботом.
@@ -15,19 +19,24 @@ const texts = {
     `,
     askName: "Введите вашу фамилию и имя",
     askAge: "Введите ваш возраст",
+    ageResponse: "Ты слишком мал для нас :(",
+    ageErrorResponse: "Введите число",
     askCity: "Введите ваш город",
     askResume: "Отправьте ваше резюме в виде ссылки или файла",
     askExperience: "Опишите ваш коммерческий опыт",
-    thanks: "Спасибо за заполнение информации!"
+    thanks: "Спасибо за заполнение информации!",
   },
   eng: {
     welcome: "You have selected English. Welcome to KODE talents!",
     specialityQuestion: "Do you know what specialty you're interested in?",
-    specYesResponse: "Well, then you need to register to further define the test assignment.",
-    specNoResponse: "Well, then you need to register to take a career guidance test.",
+    specYesResponse:
+      "Well, then you need to register to further define the test assignment.",
+    specNoResponse:
+      "Well, then you need to register to take a career guidance test.",
     consentRequest: "Please provide your consent for processing personal data.",
     consentAgree: "Thank you! You have given consent for data processing.",
-    consentDisagree: "You did not provide consent. We cannot proceed without consent.",
+    consentDisagree:
+      "You did not provide consent. We cannot proceed without consent.",
     help: `
       Here are the available commands:
       /start - Start the interaction with the bot.
@@ -36,11 +45,13 @@ const texts = {
     `,
     askName: "Enter your first and last name",
     askAge: "Enter your age",
+    ageResponse: "You're too young for us :(",
+    ageErrorResponse: "Enter a number",
     askCity: "Enter your city",
     askResume: "Send your resume by link or file",
     askExperience: "Describe your commercial experience",
-    thanks: "Thanks for filling out the information!"
-  }
+    thanks: "Thanks for filling out the information!",
+  },
 };
 
 module.exports = texts;
