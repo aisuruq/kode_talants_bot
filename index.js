@@ -1,5 +1,6 @@
 require("dotenv").config();
 const texts = require("./text");
+const specialization = require('./specialization');
 const telegramBot = require(`node-telegram-bot-api`);
 
 const bot = new telegramBot(process.env.API_KEY_BOT, {
@@ -10,7 +11,8 @@ bot.setMyCommands(
   [
     { command: "/start", description: "Запуск бота / Start Bot" },
     { command: "/help", description: "Вспомогательные команды / Auxiliary commands" },
-    { command: "/link", description: "Наш сайт / Our web-page" }
+    { command: "/link", description: "Наш сайт / Our web-page" },
+    { command: "/specialties", description: "О специальностях компании / About the company's specialties" }
   ]
 );
 
@@ -52,6 +54,36 @@ bot.onText(/\/help/, async (msg) => {
 
   if (selectedLanguage) {
     await bot.sendMessage(chatId, texts[selectedLanguage].help);
+  } else {
+    const startOptions = {
+      reply_markup: {
+        keyboard: [[{ text: "Старт / Start" }]],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+      },
+    };
+    await bot.sendMessage(
+      chatId,
+      "Для начала запустите бота / First, launch the bot",
+      startOptions
+    );
+  }
+});
+
+bot.onText(/\/specialties/, async (msg) => {
+  const chatId = msg.chat.id;
+  const userData = userResponses[chatId]; 
+  const selectedLanguage = userData?.language;
+
+  if (selectedLanguage) {
+    const specializationsList = specialization[selectedLanguage];
+
+    let messageText = selectedLanguage === "rus" ? "Доступные специальности:\n\n" : "Available Specialties:\n\n";
+    specializationsList.forEach((specialty, index) => {
+      messageText += `${index + 1}. *${specialty.name}*\n${specialty.desc}\n\n`;
+    });
+
+    await bot.sendMessage(chatId, messageText, { parse_mode: "Markdown" });
   } else {
     const startOptions = {
       reply_markup: {
@@ -194,6 +226,8 @@ bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const userData = userResponses[chatId];
 
+  if (msg.text.startsWith("/")) return;
+
   if (userData && userData.consent) {
     if (userData.currentStep === "askName") {
       userData.name = msg.text;
@@ -251,7 +285,7 @@ bot.on("callback_query", (query) => {
 
 const sendTestAssignment = async (chatId, language) => {
   const userData = userResponses[chatId];
-  
+
   let testAssignmentLink;
   if (userData.experience === `${language}_exp_below`) {
     testAssignmentLink = texts[language].testAssignments.below_1_5_years;
@@ -268,6 +302,7 @@ const sendTestAssignment = async (chatId, language) => {
     regProcess = false;
     await bot.sendMessage(chatId, `${texts[language].testTaskIntro} ${testAssignmentLink}`)
     await bot.sendMessage(chatId, texts[language].askForSubmission)
+    
   } else {
     await bot.sendMessage(chatId, texts[language].thanks);
   }
