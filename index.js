@@ -159,19 +159,19 @@ const askExp = async (chatId, language) => {
           {
             text:
               language === "rus" ? "менее 1.5 лет" : "less than a 1.5 years",
-            callback_data: `${language}_exp_below_year`,
+            callback_data: `менее полутора лет`,
           },
         ],
         [
           {
             text: language === "rus" ? "1.5 - 3 лет" : "1.5 - 3 years",
-            callback_data: `${language}_exp_between`,
+            callback_data: `1.5 - 3 лет`,
           },
         ],
         [
           {
             text: language === "rus" ? "более 3 лет" : "more than a 3 years",
-            callback_data: `${language}_exp_above_three_years`,
+            callback_data: `более 3 лет`,
           },
         ],
       ],
@@ -180,9 +180,120 @@ const askExp = async (chatId, language) => {
   bot.sendMessage(chatId, texts[language].askExperience, expOptions);
   bot.on("callback_query", (query) => {
     userResponses.experience = query.data;
-    console.log(userResponses.experience);
     bot.deleteMessage(chatId, query.message.message_id);
     bot.sendMessage(chatId, texts[language].thanks);
+  });
+};
+
+let step = 0;
+
+const askQuestionOne = (chatId, language) => {
+  bot.sendMessage(chatId, texts[language].askQuestionOne);
+  bot.on("message", () => {
+    if (step === 0) {
+      askQuestionTwo(chatId, selectedLanguage);
+      step += 1;
+    }
+  });
+};
+
+const askQuestionTwo = (chatId, language) => {
+  bot.sendMessage(chatId, texts[language].askQuestionTwo);
+  bot.on("message", () => {
+    if (step === 1) {
+      askQuestionThree(chatId, selectedLanguage);
+      step += 1;
+    }
+  });
+};
+
+const askQuestionThree = (chatId, language) => {
+  bot.sendMessage(chatId, texts[language].askQuestionThree);
+  bot.on("message", () => {
+    if (step === 2) {
+      askQuestionFour(chatId, selectedLanguage);
+      step += 1;
+    }
+  });
+};
+
+const askQuestionFour = (chatId, language) => {
+  bot.sendMessage(chatId, texts[language].askQuestionFour);
+  bot.on("message", () => {
+    if (step === 3) {
+      askQuestionFive(chatId, selectedLanguage);
+      step += 1;
+    }
+  });
+};
+
+const askQuestionFIve = (chatId, language) => {
+  bot.sendMessage(chatId, texts[language].askQuestionFive);
+  bot.on("message", () => {
+    if (step === 4) {
+      bot.sendMessage(chatId, ":)");
+      step += 1;
+    }
+  });
+};
+
+const askTestRequest = async (chatId, language) => {
+  const testRequestOptions = {
+    reply_markup: JSON.stringify({
+      inline_keyboard: [
+        [
+          {
+            text: language === "rus" ? "Да" : "Yes",
+            callback_data: "yes",
+          },
+          {
+            text: language === "rus" ? "Нет" : "No",
+            callback_data: "no",
+          },
+        ],
+      ],
+    }),
+  };
+
+  let step = 0;
+
+  bot.sendMessage(chatId, texts[language].askTestRequest, testRequestOptions);
+  bot.on("callback_query", async (query) => {
+    if (query.data === "yes") {
+      bot.deleteMessage(chatId, query.message.message_id);
+      if (step === 0) {
+        askQuestionOne(chatId, language);
+        step += 1;
+        return (userResponses[chatId].one = true);
+      }
+      if (step === 1) {
+        console.log(!userResponses[chatId].one);
+        askQuestionTwo(chatId, language);
+        step += 1;
+        return (userResponses[chatId].two = true);
+      }
+      if (step === 3) {
+        askQuestionThree(chatId, language);
+        step += 1;
+        return (userResponses[chatId].three = true);
+      }
+      if (step === 4) {
+        askQuestionFour(chatId, language);
+        step += 1;
+        return (userResponses[chatId].four = true);
+      }
+      if (step === 5) {
+        askQuestionFive(chatId, language);
+        step++;
+        return (userResponses[chatId].five = true);
+      }
+      if (step === 6) {
+        return bot.sendMessage(chatId, ":)");
+      }
+    } else {
+      bot.deleteMessage(chatId, query.message.message_id);
+      return bot.sendMessage(chatId, ":(");
+    }
   });
 };
 
@@ -224,26 +335,19 @@ bot.on("message", async (msg) => {
       } else {
         userData.resume = msg.text;
       }
-      if (userResponses[chatId].isSpecKnown) {
+      if (userResponses[chatId].isSpecKnown === false) {
+        askTestRequest(chatId, selectedLanguage);
+      } else if (userResponses[chatId].isSpecKnown) {
         await askExp(chatId, selectedLanguage);
-        saveToGoogleSheets(userData);
+        // saveToGoogleSheets(userData);
         delete userResponses[chatId];
       } else {
         await bot.sendMessage(chatId, texts[userLang].thanks);
-        saveToGoogleSheets(userData);
+        await askTestRequest(chatId, selectedLanguage);
+        // saveToGoogleSheets(userData);
         delete userResponses[chatId];
       }
-    } else if (!userData.experience) {
-      if (!userResponses[chatId].isSpecKnown) {
-        userData.experience = "no exp";
-      }
-      await bot.sendMessage(chatId, texts[userLang].thanks);
-      saveToGoogleSheets(userData);
-      delete userResponses[chatId];
+      console.log(userResponses[chatId]);
     }
   }
 });
-
-const saveToGoogleSheets = (userData) => {
-  console.log("Сохранение данных в Google Sheets:", userData);
-};
