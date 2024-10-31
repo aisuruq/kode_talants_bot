@@ -227,7 +227,7 @@ const askQuestionFour = (chatId, language) => {
   });
 };
 
-const askQuestionFIve = (chatId, language) => {
+const askQuestionFive = (chatId, language) => {
   bot.sendMessage(chatId, texts[language].askQuestionFive);
   bot.on("message", () => {
     if (step === 4) {
